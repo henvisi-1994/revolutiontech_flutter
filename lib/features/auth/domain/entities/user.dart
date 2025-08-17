@@ -1,11 +1,14 @@
-class User {
-  final String id;
+import 'package:template_flutter/core/entities/base_entity.dart';
+
+class User extends BaseEntity {
   final String name;
   final String email;
 
   const User({
-    required this.id,
+    super.id,
     required this.name,
     required this.email,
+    super.createdAt,
+    super.updatedAt,
   });
 }

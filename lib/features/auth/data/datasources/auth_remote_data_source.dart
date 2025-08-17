@@ -1,3 +1,5 @@
+import 'package:template_flutter/core/services/api_service.dart';
+
 import '../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
@@ -5,10 +7,16 @@ abstract class AuthRemoteDataSource {
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+  final api = ApiService();
+
   @override
   Future<UserModel> login(String email, String password) async {
-    // Aquí harías la llamada HTTP
-    await Future.delayed(Duration(seconds: 1));
-    return UserModel(id: "1", name: "Henry", email: email);
+    final response = await api.post(
+      "/auth/login",
+      data: {"email": email, "password": password},
+    );
+    final token = response.data["access_token"];
+    api.setToken(token);
+    return UserModel(name: "Henry", email: email);
   }
 }
