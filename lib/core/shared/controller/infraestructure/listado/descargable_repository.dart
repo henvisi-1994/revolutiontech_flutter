@@ -5,7 +5,6 @@ import 'package:template_flutter/core/shared/controller/domain/response_item.dar
 import 'package:template_flutter/core/shared/error/domain/api_error.dart';
 
 class DescargableRepository {
-  final DioHttpRepository _httpRepository = DioHttpRepository.getInstance();
   final Endpoint endpoint;
 
   DescargableRepository(this.endpoint);
@@ -14,10 +13,14 @@ class DescargableRepository {
   Future<ResponseItem<List<int>, Response>> descargarListado(
       {Map<String, dynamic>? params}) async {
     try {
-      final ruta =
-          _httpRepository.getEndpoint(endpoint: endpoint, args: params);
+      // Obtenemos la instancia de DioHttpRepository
+      final httpRepo = await DioHttpRepository.getInstance();
 
-      final response = await _httpRepository.get<List<int>>(
+      // Construimos la ruta
+      final ruta = httpRepo.getEndpoint(endpoint: endpoint, args: params);
+
+      // Llamada GET con tipo bytes
+      final response = await httpRepo.get<List<int>>(
         ruta,
         options: Options(responseType: ResponseType.bytes),
       );

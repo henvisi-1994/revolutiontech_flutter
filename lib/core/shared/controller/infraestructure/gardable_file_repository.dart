@@ -6,7 +6,6 @@ import 'package:template_flutter/core/shared/error/domain/api_error.dart';
 import 'package:template_flutter/core/shared/http/domain/http_response.dart';
 
 class GuardableFileRepository<T> {
-  final DioHttpRepository _httpRepository = DioHttpRepository.getInstance();
   final Endpoint endpoint;
 
   GuardableFileRepository(this.endpoint);
@@ -17,16 +16,18 @@ class GuardableFileRepository<T> {
     T Function(dynamic) fromJsonT,
   ) async {
     try {
+      // Esperamos la instancia singleton de DioHttpRepository
+      final httpRepo = await DioHttpRepository.getInstance();
+
       // Construcción de ruta
-      final ruta =
-          "${_httpRepository.getEndpoint(endpoint: endpoint)}/files/$id";
+      final ruta = "${httpRepo.getEndpoint(endpoint: endpoint)}/files/$id";
 
       // Llamada POST
-      final response = await _httpRepository.post(ruta, data: entidad);
+      final response = await httpRepo.post(ruta, data: entidad);
 
       // Parseamos a HttpResponsePost<T>
       final responseData = HttpResponsePost<T>.fromJson(
-        response.data,
+        response.data as Map<String, dynamic>,
         fromJsonT,
       );
 
@@ -36,6 +37,12 @@ class GuardableFileRepository<T> {
       );
     } on DioException catch (error) {
       throw ApiError.fromDioError(error);
+    } catch (e) {
+      throw ApiError(
+        mensaje: e.toString(),
+        erroresValidacion: [],
+        status: null,
+      );
     }
   }
 }

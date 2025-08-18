@@ -6,7 +6,6 @@ import 'package:template_flutter/core/shared/error/domain/api_error.dart';
 import 'package:template_flutter/core/shared/http/domain/http_response.dart';
 
 class GuardableFormDataRepository<T> {
-  final DioHttpRepository _httpRepository = DioHttpRepository.getInstance();
   final Endpoint endpoint;
 
   GuardableFormDataRepository(this.endpoint);
@@ -17,19 +16,21 @@ class GuardableFormDataRepository<T> {
     Map<String, dynamic>? params,
   }) async {
     try {
+      // Esperamos la instancia singleton de DioHttpRepository
+      final httpRepo = await DioHttpRepository.getInstance();
+
       // Construimos la ruta con parámetros
-      final ruta =
-          _httpRepository.getEndpoint(endpoint: endpoint, args: params);
+      final ruta = httpRepo.getEndpoint(endpoint: endpoint, args: params);
 
       // Convertimos entidad a FormData
       final formData = convertirJsonAFormData(entidad);
 
       // Hacemos POST con FormData
-      final response = await _httpRepository.post(ruta, data: formData);
+      final response = await httpRepo.post(ruta, data: formData);
 
       // Parseamos la respuesta
       final responseData = HttpResponsePost<T>.fromJson(
-        response.data,
+        response.data as Map<String, dynamic>,
         fromJsonT,
       );
 
@@ -39,6 +40,12 @@ class GuardableFormDataRepository<T> {
       );
     } on DioException catch (error) {
       throw ApiError.fromDioError(error);
+    } catch (e) {
+      throw ApiError(
+        mensaje: e.toString(),
+        erroresValidacion: [],
+        status: null,
+      );
     }
   }
 

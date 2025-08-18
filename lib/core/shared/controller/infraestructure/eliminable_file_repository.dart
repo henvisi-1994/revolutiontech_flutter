@@ -6,7 +6,6 @@ import 'package:template_flutter/core/shared/error/domain/api_error.dart';
 import 'package:template_flutter/core/shared/http/domain/http_response.dart';
 
 class EliminableFileRepository<T> {
-  final DioHttpRepository _httpRepository = DioHttpRepository.getInstance();
   final Endpoint endpoint;
 
   EliminableFileRepository(this.endpoint);
@@ -16,24 +15,37 @@ class EliminableFileRepository<T> {
     Map<String, dynamic>? params,
   }) async {
     try {
+      // Esperamos la instancia singleton de DioHttpRepository
+      final httpRepo = await DioHttpRepository.getInstance();
+
       // Armamos la ruta con endpoint + id
-      final ruta =
-          _httpRepository.getEndpoint(endpoint: endpoint, args: params, id: id);
+      final ruta = httpRepo.getEndpoint(
+        endpoint: endpoint,
+        id: id,
+        args: params,
+      );
 
       // Llamada DELETE
-      final response = await _httpRepository.delete(ruta);
+      final response = await httpRepo.delete(ruta);
 
       // Parseamos la respuesta
       final responseData = HttpResponseDelete<T>.fromJson(
-        response.data,
+        response.data as Map<String, dynamic>,
         (data) => data as T,
       );
+
       return ResponseItem<T, HttpResponseDelete<T>>(
         response: responseData,
         result: responseData.data.modelo, // en TS usabas response.data.mensaje
       );
     } on DioException catch (error) {
       throw ApiError.fromDioError(error);
+    } catch (e) {
+      throw ApiError(
+        mensaje: e.toString(),
+        erroresValidacion: [],
+        status: null,
+      );
     }
   }
 }

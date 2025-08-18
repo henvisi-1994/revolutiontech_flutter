@@ -22,9 +22,9 @@ abstract class TransaccionSimpleController<T extends BaseEntity>
   final DescargableRepository _descargableRepository;
 
   /// Solo se pide el endpoint
-  TransaccionSimpleController(Endpoint endpoint)
-      : _consultableRepository = ConsultableRepository<T>(endpoint),
-        _guardableRepository = GuardableRepository<T>(endpoint),
+  TransaccionSimpleController(Endpoint endpoint, T Function(dynamic) fromJson)
+      : _consultableRepository = ConsultableRepository<T>(endpoint, fromJson),
+        _guardableRepository = GuardableRepository<T>(endpoint, fromJson),
         _editableRepository = EditableRepository<T>(endpoint),
         _eliminableRepository = EliminableRepository<T>(endpoint),
         _filtrableRepository = FiltrableRepository<T>(endpoint),

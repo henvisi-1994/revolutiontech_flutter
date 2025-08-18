@@ -1,4 +1,3 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
@@ -8,6 +7,7 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 
 void main() {
+  
   final remoteDataSource = AuthRemoteDataSourceImpl();
   final repository = AuthRepositoryImpl(remoteDataSource);
   final loginUser = LoginUser(repository);

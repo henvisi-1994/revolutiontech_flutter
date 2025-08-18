@@ -25,16 +25,12 @@ class ApiService {
             if (_token != null && _token!.isNotEmpty) {
               options.headers["Authorization"] = "Bearer $_token";
             }
-            print("➡️ [${options.method}] ${options.uri}");
-            if (options.data != null) print("📤 Body: ${options.data}");
-            return handler.next(options);
+            if (options.data != null) return handler.next(options);
           },
           onResponse: (response, handler) {
-            print("✅ [${response.statusCode}] ${response.data}");
             return handler.next(response);
           },
           onError: (DioException e, handler) {
-            print("❌ Error [${e.response?.statusCode}] ${e.message}");
             return handler.next(e);
           },
         ),

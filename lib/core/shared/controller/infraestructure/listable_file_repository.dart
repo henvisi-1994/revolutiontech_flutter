@@ -6,7 +6,6 @@ import 'package:template_flutter/core/shared/error/domain/api_error.dart';
 import 'package:template_flutter/core/shared/http/domain/http_response.dart';
 
 class ListableFileRepository<T> {
-  final DioHttpRepository _httpRepository = DioHttpRepository.getInstance();
   final Endpoint endpoint;
 
   /// Conversor JSON -> T
@@ -17,14 +16,17 @@ class ListableFileRepository<T> {
   Future<ResponseItem<List<T>, HttpResponseGet<HttpResponseList<T>>>>
       listarArchivos(int id, {Map<String, dynamic>? params}) async {
     try {
+      // Obtenemos la instancia de DioHttpRepository
+      final httpRepo = await DioHttpRepository.getInstance();
+
       // Construcción de la ruta
-      final baseRuta = _httpRepository.getEndpoint(endpoint: endpoint);
-      final ruta = params != null && params.isNotEmpty
-          ? "$baseRuta/files/$id${_httpRepository.mapearArgumentos(params)}"
+      final baseRuta = httpRepo.getEndpoint(endpoint: endpoint);
+      final ruta = (params != null && params.isNotEmpty)
+          ? "$baseRuta/files/$id${httpRepo.mapearArgumentos(params)}"
           : "$baseRuta/files/$id";
 
       // Llamada GET
-      final response = await _httpRepository.get<Map<String, dynamic>>(ruta);
+      final response = await httpRepo.get<Map<String, dynamic>>(ruta);
 
       // Normalizamos el JSON recibido
       final rawData = response.data?['data'];
@@ -50,6 +52,12 @@ class ListableFileRepository<T> {
       );
     } on DioException catch (error) {
       throw ApiError.fromDioError(error);
+    } catch (e) {
+      throw ApiError(
+        mensaje: 'Error inesperado al listar archivos: $e',
+        erroresValidacion: [],
+        status: null,
+      );
     }
   }
 }

@@ -6,31 +6,32 @@ import 'package:template_flutter/core/shared/http/domain/http_response.dart';
 import 'package:template_flutter/core/shared/http/infraestructure/dio_http_repository.dart';
 
 class ConsultableRepository<T> {
-  final DioHttpRepository _httpRepository = DioHttpRepository.getInstance();
   final Endpoint endpoint;
+  final T Function(dynamic json) fromJson;
+  final Future<DioHttpRepository> _httpRepository;
 
-  ConsultableRepository(this.endpoint);
+  ConsultableRepository(this.endpoint, this.fromJson)
+      : _httpRepository = DioHttpRepository.getInstance();
 
   Future<ResponseItem<T, HttpResponseGet<T>>> consultar(
     int id, {
     Map<String, dynamic>? params,
   }) async {
     try {
-      final ruta = _httpRepository.getEndpoint(
+      // Esperamos a que el singleton esté inicializado
+      final httpRepo = await _httpRepository;
+
+      final ruta = httpRepo.getEndpoint(
         endpoint: endpoint,
         id: id,
         args: params,
       );
 
-      // Aquí asumimos que DioHttpRepository.get<T>() devuelve un HttpResponseGet<T>
-      final response = await _httpRepository.get(
-        ruta,
-        queryParams: params,
-      );
+      final response = await httpRepo.get(ruta, queryParams: params);
 
       final HttpResponseGet<T> parsed = HttpResponseGet.fromJson(
-        response.data as Map<String, dynamic>, // 👈 aquí accedes al JSON
-        (data) => data as T,
+        response.data as Map<String, dynamic>,
+        fromJson,
       );
 
       return ResponseItem<T, HttpResponseGet<T>>(

@@ -4,11 +4,12 @@ class User extends BaseEntity {
   final String name;
   final String email;
 
-  const User({
-    super.id,
-    required this.name,
-    required this.email,
-    super.createdAt,
-    super.updatedAt,
-  });
+  User({required this.name, required this.email});
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      name: json['name'],
+      email: json['email'],
+    );
+  }
 }

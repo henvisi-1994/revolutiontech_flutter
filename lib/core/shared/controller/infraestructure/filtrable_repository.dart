@@ -6,7 +6,6 @@ import 'package:template_flutter/core/shared/http/domain/http_response.dart';
 import 'package:template_flutter/core/shared/controller/domain/response_item.dart';
 
 class FiltrableRepository<T> {
-  final DioHttpRepository _httpRepository = DioHttpRepository.getInstance();
   final Endpoint endpoint;
 
   FiltrableRepository(this.endpoint);
@@ -17,12 +16,15 @@ class FiltrableRepository<T> {
     C Function(Map<String, dynamic>) fromJsonC,
   ) async {
     try {
+      // Esperamos la instancia singleton de DioHttpRepository
+      final httpRepo = await DioHttpRepository.getInstance();
+
       // Construcción de la ruta
-      final baseRuta = _httpRepository.getEndpoint(endpoint: endpoint);
+      final baseRuta = httpRepo.getEndpoint(endpoint: endpoint);
       final ruta = uri.startsWith('?') ? "$baseRuta$uri" : "$baseRuta?$uri";
 
       // Llamada GET
-      final response = await _httpRepository.get<Map<String, dynamic>>(ruta);
+      final response = await httpRepo.get<Map<String, dynamic>>(ruta);
 
       // Normalizamos data
       final rawData = response.data?['data'];
@@ -48,6 +50,12 @@ class FiltrableRepository<T> {
       );
     } on DioException catch (error) {
       throw ApiError.fromDioError(error);
+    } catch (e) {
+      throw ApiError(
+        mensaje: e.toString(),
+        erroresValidacion: [],
+        status: null,
+      );
     }
   }
 }

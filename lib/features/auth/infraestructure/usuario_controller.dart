@@ -3,5 +3,6 @@ import 'package:template_flutter/core/shared/contenedor/modules/simple/infraestr
 import 'package:template_flutter/features/auth/domain/entities/user.dart';
 
 class UsuarioController extends TransaccionSimpleController<User> {
-  UsuarioController() : super(ApiEndpoints.usuarios);
+  UsuarioController()
+      : super(ApiEndpoints.usuarios, (json) => User.fromJson(json));
 }

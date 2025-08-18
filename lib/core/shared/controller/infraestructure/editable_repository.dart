@@ -6,7 +6,6 @@ import 'package:template_flutter/core/shared/http/domain/http_response.dart';
 import 'package:template_flutter/core/shared/http/infraestructure/dio_http_repository.dart';
 
 class EditableRepository<T> {
-  final DioHttpRepository _httpRepository = DioHttpRepository.getInstance();
   final Endpoint endpoint;
 
   EditableRepository(this.endpoint);
@@ -14,32 +13,40 @@ class EditableRepository<T> {
   /// PUT completo de la entidad
   Future<ResponseItem<T, HttpResponsePut<T>>> editar(
       int? id,
-      dynamic entidad, // 👈 lo recibo como dynamic por si es Map o modelo
-      T Function(dynamic json) fromJsonT, // 👈 factory para parsear T
+      dynamic entidad, // puede ser Map o modelo
+      T Function(dynamic json) fromJsonT, // factory para parsear T
       {Map<String, dynamic>? params}) async {
     try {
-      final ruta = _httpRepository.getEndpoint(
+      final httpRepo = await DioHttpRepository.getInstance();
+
+      final ruta = httpRepo.getEndpoint(
         endpoint: endpoint,
         id: id,
         args: params,
       );
 
-      final response = await _httpRepository.put(
+      final response = await httpRepo.put(
         ruta,
         data: entidad,
       );
 
       final responseData = HttpResponsePut<T>.fromJson(
-        response.data as Map<String, dynamic>, // 👈 seguridad extra
+        response.data as Map<String, dynamic>,
         fromJsonT,
       );
 
       return ResponseItem<T, HttpResponsePut<T>>(
         response: responseData,
-        result: responseData.data.modelo, // caso simple
+        result: responseData.data.modelo,
       );
     } on DioException catch (error) {
       throw ApiError.fromDioError(error);
+    } catch (e) {
+      throw ApiError(
+        mensaje: e.toString(),
+        erroresValidacion: [],
+        status: null,
+      );
     }
   }
 
@@ -47,16 +54,18 @@ class EditableRepository<T> {
   Future<ResponseItem<T, HttpResponsePut<T>>> editarParcial(
       int id,
       Map<String, dynamic> data,
-      T Function(dynamic json) fromJsonT, // 👈 igual que arriba
+      T Function(dynamic json) fromJsonT, // factory para parsear T
       {Map<String, dynamic>? params}) async {
     try {
-      final ruta = _httpRepository.getEndpoint(
+      final httpRepo = await DioHttpRepository.getInstance();
+
+      final ruta = httpRepo.getEndpoint(
         endpoint: endpoint,
         id: id,
         args: params,
       );
 
-      final response = await _httpRepository.patch(
+      final response = await httpRepo.patch(
         ruta,
         data: data,
       );
@@ -67,9 +76,17 @@ class EditableRepository<T> {
       );
 
       return ResponseItem<T, HttpResponsePut<T>>(
-          response: responseData, result: responseData.data.modelo);
+        response: responseData,
+        result: responseData.data.modelo,
+      );
     } on DioException catch (error) {
       throw ApiError.fromDioError(error);
+    } catch (e) {
+      throw ApiError(
+        mensaje: e.toString(),
+        erroresValidacion: [],
+        status: null,
+      );
     }
   }
 }

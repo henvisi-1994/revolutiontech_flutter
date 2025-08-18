@@ -6,7 +6,6 @@ import 'package:template_flutter/core/shared/error/domain/api_error.dart';
 import 'package:template_flutter/core/shared/http/domain/http_response.dart';
 
 class ListableRepository<T> {
-  final DioHttpRepository _httpRepository = DioHttpRepository.getInstance();
   final Endpoint endpoint;
 
   /// Función para convertir JSON a T
@@ -18,17 +17,25 @@ class ListableRepository<T> {
     Map<String, dynamic>? params,
   }) async {
     try {
+      // Obtenemos la instancia de DioHttpRepository
+      final httpRepo = await DioHttpRepository.getInstance();
+
       // Construimos la ruta
-      final ruta =
-          _httpRepository.getEndpoint(endpoint: endpoint, args: params);
+      final ruta = httpRepo.getEndpoint(endpoint: endpoint, args: params);
 
       // Llamada GET
-      final response = await _httpRepository.get<Map<String, dynamic>>(ruta);
+      final response = await httpRepo.get<Map<String, dynamic>>(ruta);
+
+      // Normalizamos data
+      final rawData = response.data?['data'];
+      final normalized = rawData is Map<String, dynamic>
+          ? rawData
+          : {'results': rawData ?? []};
 
       // Parseamos HttpResponseList<T>
       final dataList = HttpResponseList<T>.fromJson(
-        response.data?['data'] ?? {},
-        (item) => fromJsonT(item),
+        normalized,
+        (item) => fromJsonT(item as Map<String, dynamic>),
       );
 
       // Parseamos HttpResponseGet
@@ -43,6 +50,12 @@ class ListableRepository<T> {
       );
     } on DioException catch (error) {
       throw ApiError.fromDioError(error);
+    } catch (e) {
+      throw ApiError(
+        mensaje: 'Error inesperado al listar: $e',
+        erroresValidacion: [],
+        status: null,
+      );
     }
   }
 }

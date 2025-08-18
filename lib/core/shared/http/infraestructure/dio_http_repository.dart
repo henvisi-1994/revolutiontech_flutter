@@ -6,29 +6,44 @@ import 'package:template_flutter/core/shared/http/domain/endpoint.dart';
 class DioHttpRepository {
   static DioHttpRepository? _instance;
   static Dio? _dio;
+  static String? _baseUrl;
+  static String? _token;
 
   DioHttpRepository._internal();
 
   /// Inicializa Dio con configuración base
-  static void _initialize() {
-    final apiUrl = dotenv.env['API_BASE_URL'] ?? "";
+  static Future<void> _initialize() async {
+    // Solo cargar dotenv si aún no está listo
+    if (dotenv.isEveryDefined(['API_BASE_URL']) == false) {
+      try {
+        await dotenv.load(fileName: ".env");
+      } catch (e) {
+        throw Exception("❌ Error al cargar .env: $e");
+      }
+    }
 
-    _dio = Dio(BaseOptions(
-      baseUrl: apiUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    ));
+    _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    if (_baseUrl == null || _baseUrl!.isEmpty) {
+      throw Exception("❌ API_BASE_URL no está definido en .env");
+    }
+
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: _baseUrl!,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      ),
+    );
 
     // Interceptor para logs y token
     _dio!.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final token = _token;
-          if (token != null && token.isNotEmpty) {
-            options.headers["Authorization"] = "Bearer $token";
+          if (_token != null && _token!.isNotEmpty) {
+            options.headers["Authorization"] = "Bearer $_token";
           }
           print("➡️ [${options.method}] ${options.uri}");
           return handler.next(options);
@@ -46,44 +61,60 @@ class DioHttpRepository {
   }
 
   /// Singleton getter
-  static DioHttpRepository getInstance() {
+  static Future<DioHttpRepository> getInstance() async {
     _instance ??= DioHttpRepository._internal();
     if (_dio == null) {
-      _initialize();
+      await _initialize();
     }
     return _instance!;
   }
 
   // ==== TOKEN ====
-  static String? _token;
-
   static void setToken(String token) => _token = token;
   static void clearToken() => _token = null;
 
   // ==== MÉTODOS HTTP ====
-  Future<Response<T>> get<T>(String url,
-      {Map<String, dynamic>? queryParams, Options? options}) async {
+  Future<Response<T>> get<T>(
+    String url, {
+    Map<String, dynamic>? queryParams,
+    Options? options,
+  }) async {
     return await _dio!
         .get<T>(url, queryParameters: queryParams, options: options);
   }
 
-  Future<Response<T>> post<T>(String url,
-      {dynamic data, Options? options}) async {
+  Future<Response<T>> post<T>(
+    String url, {
+    dynamic data,
+    Options? options,
+  }) async {
+    print("response url: ${url}");
+    print("response data: ${data}");
+
     return await _dio!.post<T>(url, data: data, options: options);
   }
 
-  Future<Response<T>> put<T>(String url,
-      {dynamic data, Options? options}) async {
+  Future<Response<T>> put<T>(
+    String url, {
+    dynamic data,
+    Options? options,
+  }) async {
     return await _dio!.put<T>(url, data: data, options: options);
   }
 
-  Future<Response<T>> delete<T>(String url,
-      {dynamic data, Options? options}) async {
+  Future<Response<T>> delete<T>(
+    String url, {
+    dynamic data,
+    Options? options,
+  }) async {
     return await _dio!.delete<T>(url, data: data, options: options);
   }
 
-  Future<Response<T>> patch<T>(String url,
-      {dynamic data, Options? options}) async {
+  Future<Response<T>> patch<T>(
+    String url, {
+    dynamic data,
+    Options? options,
+  }) async {
     return await _dio!.patch<T>(url, data: data, options: options);
   }
 
@@ -96,8 +127,7 @@ class DioHttpRepository {
     bool includeApiPath = true,
     Map<String, dynamic>? args,
   }) {
-    String path = endpoint.toString();
-
+    String path = endpoint.accessor;
     if (id != null) {
       path = "$path/$id";
     }
@@ -121,8 +151,7 @@ class DioHttpRepository {
       if (value != null) {
         if (!filtrar) {
           final operador = key == "filter" ? "" : "=";
-          final clave = key;
-          query.add("$clave$operador$value");
+          query.add("$key$operador$value");
         } else {
           query.add("$key[like]=%$value%");
         }
