@@ -1,4 +1,3 @@
-import 'package:template_flutter/core/services/api_service.dart';
 import 'package:template_flutter/features/auth/domain/entities/user.dart';
 import 'package:template_flutter/features/auth/infraestructure/usuario_controller.dart';
 

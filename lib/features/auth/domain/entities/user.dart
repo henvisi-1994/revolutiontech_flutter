@@ -1,6 +1,7 @@
-import 'package:template_flutter/core/entities/base_entity.dart';
+import 'package:template_flutter/core/shared/http/domain/base_entity.dart';
+import 'package:template_flutter/core/shared/controller/domain/json_serializable.dart';
 
-class User extends BaseEntity {
+class User extends BaseEntity implements JsonSerializable {
   final String name;
   final String email;
 
@@ -12,4 +13,11 @@ class User extends BaseEntity {
       email: json['email'],
     );
   }
+
+  @override
+  Map<String, dynamic> toJson() => {
+        "id": id,
+        "name": name,
+        "email": email,
+      };
 }

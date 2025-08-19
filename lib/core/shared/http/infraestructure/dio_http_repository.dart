@@ -1,170 +1,91 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:template_flutter/core/shared/http/domain/endpoint.dart';
 
-/// Equivalente a AxiosHttpRepository en TypeScript
 class DioHttpRepository {
-  static DioHttpRepository? _instance;
-  static Dio? _dio;
-  static String? _baseUrl;
-  static String? _token;
+  final Dio _dio;
+  String? _token;
+  late final String baseUrl;
 
-  DioHttpRepository._internal();
-
-  /// Inicializa Dio con configuración base
-  static Future<void> _initialize() async {
-    // Solo cargar dotenv si aún no está listo
-    if (dotenv.isEveryDefined(['API_BASE_URL']) == false) {
-      try {
-        await dotenv.load(fileName: ".env");
-      } catch (e) {
-        throw Exception("❌ Error al cargar .env: $e");
-      }
-    }
-
-    _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
-    if (_baseUrl == null || _baseUrl!.isEmpty) {
-      throw Exception("❌ API_BASE_URL no está definido en .env");
-    }
-
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: _baseUrl!,
+  DioHttpRepository() : _dio = Dio() {
+    // Cargar variables de entorno solo si no están ya cargadas
+    _loadEnv().then((_) {
+      baseUrl = dotenv.env['API_BASE_URL'] ?? ' ';
+      _dio.options = BaseOptions(
+        baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {
           "Content-Type": "application/json",
         },
-      ),
-    );
+      );
 
-    // Interceptor para logs y token
-    _dio!.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          if (_token != null && _token!.isNotEmpty) {
-            options.headers["Authorization"] = "Bearer $_token";
-          }
-          print("➡️ [${options.method}] ${options.uri}");
-          return handler.next(options);
-        },
-        onResponse: (response, handler) {
-          print("✅ [${response.statusCode}] ${response.data}");
-          return handler.next(response);
-        },
-        onError: (e, handler) {
-          print("❌ Error [${e.response?.statusCode}] ${e.message}");
-          return handler.next(e);
-        },
-      ),
-    );
-  }
-
-  /// Singleton getter
-  static Future<DioHttpRepository> getInstance() async {
-    _instance ??= DioHttpRepository._internal();
-    if (_dio == null) {
-      await _initialize();
-    }
-    return _instance!;
-  }
-
-  // ==== TOKEN ====
-  static void setToken(String token) => _token = token;
-  static void clearToken() => _token = null;
-
-  // ==== MÉTODOS HTTP ====
-  Future<Response<T>> get<T>(
-    String url, {
-    Map<String, dynamic>? queryParams,
-    Options? options,
-  }) async {
-    return await _dio!
-        .get<T>(url, queryParameters: queryParams, options: options);
-  }
-
-  Future<Response<T>> post<T>(
-    String url, {
-    dynamic data,
-    Options? options,
-  }) async {
-    print("response url: ${url}");
-    print("response data: ${data}");
-
-    return await _dio!.post<T>(url, data: data, options: options);
-  }
-
-  Future<Response<T>> put<T>(
-    String url, {
-    dynamic data,
-    Options? options,
-  }) async {
-    return await _dio!.put<T>(url, data: data, options: options);
-  }
-
-  Future<Response<T>> delete<T>(
-    String url, {
-    dynamic data,
-    Options? options,
-  }) async {
-    return await _dio!.delete<T>(url, data: data, options: options);
-  }
-
-  Future<Response<T>> patch<T>(
-    String url, {
-    dynamic data,
-    Options? options,
-  }) async {
-    return await _dio!.patch<T>(url, data: data, options: options);
-  }
-
-  // ==== HELPERS ====
-
-  /// Genera endpoint con `api/` prefix y opcional `id`
-  String getEndpoint({
-    required Endpoint endpoint,
-    int? id,
-    bool includeApiPath = true,
-    Map<String, dynamic>? args,
-  }) {
-    String path = endpoint.accessor;
-    if (id != null) {
-      path = "$path/$id";
-    }
-
-    if (includeApiPath) {
-      path = "api/$path";
-    }
-
-    if (args != null && args.isNotEmpty) {
-      path += mapearArgumentos(args);
-    }
-
-    return path;
-  }
-
-  /// Equivalente a `mapearArgumentos` en TS
-  String mapearArgumentos(Map<String, dynamic> args, {bool filtrar = false}) {
-    final query = <String>[];
-
-    args.forEach((key, value) {
-      if (value != null) {
-        if (!filtrar) {
-          final operador = key == "filter" ? "" : "=";
-          query.add("$key$operador$value");
-        } else {
-          query.add("$key[like]=%$value%");
-        }
-      }
+      _dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            if (_token != null && _token!.isNotEmpty) {
+              options.headers["Authorization"] = "Bearer $_token";
+            }
+            if (options.data != null) return handler.next(options);
+          },
+          onResponse: (response, handler) {
+            return handler.next(response);
+          },
+          onError: (DioException e, handler) {
+            return handler.next(e);
+          },
+        ),
+      );
     });
+  }
 
-    var cadena = "?${query.join('&')}";
-    if (cadena.contains('&filter')) {
-      cadena = cadena.replaceFirst('&filter', '|');
+  Future<void> _loadEnv() async {
+    try {
+      await dotenv.load(fileName: ".env");
+    } catch (e) {
+      throw Exception('Error al cargar el archivo .env: $e');
     }
-    if (cadena.contains('filter')) {
-      cadena = cadena.replaceFirst('filter', '');
+  }
+
+  /// Espera a que el servicio esté completamente inicializado
+  Future<void> ensureInitialized() async {
+    while (baseUrl == null) {
+      await Future.delayed(const Duration(milliseconds: 100));
     }
-    return cadena;
+  }
+
+  /// Guardar token en memoria
+  void setToken(String token) {
+    _token = token;
+  }
+
+  /// Limpiar token
+  void clearToken() {
+    _token = null;
+  }
+
+  /// Métodos HTTP genéricos
+  Future<Response> get(String endpoint,
+      {Map<String, dynamic>? queryParams, Options? options}) async {
+    await ensureInitialized();
+    return await _dio.get(endpoint,
+        queryParameters: queryParams, options: options);
+  }
+
+  Future<Response> post(String endpoint,
+      {dynamic data, Options? options}) async {
+    await ensureInitialized();
+    return await _dio.post(endpoint, data: data, options: options);
+  }
+
+  Future<Response> put(String endpoint,
+      {dynamic data, Options? options}) async {
+    await ensureInitialized();
+    return await _dio.put(endpoint, data: data, options: options);
+  }
+
+  Future<Response> delete(String endpoint,
+      {dynamic data, Options? options}) async {
+    await ensureInitialized();
+    return await _dio.delete(endpoint, data: data, options: options);
   }
 }

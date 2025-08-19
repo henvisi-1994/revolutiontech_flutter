@@ -1,8 +1,7 @@
 import 'package:template_flutter/core/entities/api.dart';
-import 'package:template_flutter/core/shared/contenedor/modules/simple/infraestructure/transaccion_simple_controller.dart';
+import 'package:template_flutter/core/shared/controller/infraestructure/base_controller.dart';
 import 'package:template_flutter/features/auth/domain/entities/user.dart';
 
-class UsuarioController extends TransaccionSimpleController<User> {
-  UsuarioController()
-      : super(ApiEndpoints.usuarios, (json) => User.fromJson(json));
+class UsuarioController extends BaseController<User> {
+  UsuarioController() : super(ApiEndpoints.usuarios, User.fromJson);
 }
