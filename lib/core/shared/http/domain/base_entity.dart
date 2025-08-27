@@ -1,5 +1,5 @@
 abstract class BaseEntity {
-  final String? id;
+  final int? id;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 

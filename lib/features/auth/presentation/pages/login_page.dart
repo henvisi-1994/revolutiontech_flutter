@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:template_flutter/features/home/presentation/page/home.dart';
 import '../bloc/auth_bloc.dart';
 
 class LoginPage extends StatelessWidget {
@@ -40,6 +41,12 @@ class LoginPage extends StatelessWidget {
                     context.read<AuthBloc>().add(
                           LoginRequested(emailCtrl.text, passCtrl.text),
                         );
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => HomePage(),
+                      ),
+                    );
                   },
                   child: Text("Login"),
                 ),
