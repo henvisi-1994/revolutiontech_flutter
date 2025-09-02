@@ -16,9 +16,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       "/auth/login",
       data: {"email": email, "password": password},
     );*/
-    controller.guardar(User(name: 'Henry', email: email));
+    controller.guardar(User(name: 'Henry', email: email, id: null));
     //final token = response.data["access_token"];
     // api.setToken(token);
-    return UserModel(name: "Henry", email: email);
+    return UserModel(name: "Henry", email: email, id: null);
   }
 }
