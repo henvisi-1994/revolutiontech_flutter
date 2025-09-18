@@ -14,6 +14,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String imageBase64 = '';
+  User? selectedUser;
+
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
 
   final List<User> users = List.generate(
     10,
@@ -28,14 +32,26 @@ class _HomePageState extends State<HomePage> {
   final BaseController<User> controller = UsuarioController();
 
   @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GenericPage<User>(
       title: "Usuarios",
       controller: controller,
       items: users,
       formBuilder: (context, user, onChanged) {
-        final nameController = TextEditingController(text: user.name);
-        final emailController = TextEditingController(text: user.email);
+        // Al seleccionar un user, actualizamos los controladores
+        if (selectedUser != user) {
+          selectedUser = user;
+          nameController.text = user.name;
+          emailController.text = user.email;
+          imageBase64 = user.photoProfile ?? '';
+        }
 
         return Column(
           children: [

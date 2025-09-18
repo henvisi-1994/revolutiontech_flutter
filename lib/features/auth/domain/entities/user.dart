@@ -1,15 +1,15 @@
 import 'package:template_flutter/core/shared/http/domain/base_entity.dart';
 
 class User extends BaseEntity {
-  late final String name;
-  late final String email;
+  String name;
+  String email;
   String? photoProfile;
 
   User({
     super.id,
     super.createdAt,
     super.updatedAt,
-    required this.photoProfile,
+    this.photoProfile,
     required this.name,
     required this.email,
   });
