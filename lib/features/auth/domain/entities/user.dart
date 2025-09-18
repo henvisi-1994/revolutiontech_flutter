@@ -3,11 +3,13 @@ import 'package:template_flutter/core/shared/http/domain/base_entity.dart';
 class User extends BaseEntity {
   late final String name;
   late final String email;
+  String? photoProfile;
 
   User({
     super.id,
     super.createdAt,
     super.updatedAt,
+    required this.photoProfile,
     required this.name,
     required this.email,
   });
@@ -19,6 +21,7 @@ class User extends BaseEntity {
         "updatedAt": updatedAt?.toIso8601String(),
         "name": name,
         "email": email,
+        "photoProfile": photoProfile
       };
 
   @override
@@ -32,10 +35,11 @@ class User extends BaseEntity {
             : null,
         name: json["name"],
         email: json["email"],
+        photoProfile: json["photoProfile"],
       );
 
   @override
-  User empty() => User(name: "", email: "");
+  User empty() => User(name: "", email: "", photoProfile: "");
 }
 
 extension UserFactory on User {
@@ -49,7 +53,8 @@ extension UserFactory on User {
             : null,
         name: json["name"] ?? "",
         email: json["email"] ?? "",
+        photoProfile: json["photoProfile"] ?? "",
       );
 
-  static User emptyFactory() => User(name: "", email: "");
+  static User emptyFactory() => User(name: "", email: "", photoProfile: "");
 }
